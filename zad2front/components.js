@@ -1,3 +1,78 @@
+// JSX
+function PokemonRowJSX({ pokemon, onSelect }) {
+  return (
+    <tr style={{ cursor: "pointer" }} onClick={() => onSelect(pokemon)}>
+      <td>{pokemon.id}</td>
+      <td className="text-capitalize">{pokemon.name}</td>
+      <td><img src={pokemon.sprite} alt={pokemon.name} style={{ height: 50 }} /></td>
+    </tr>
+  );
+}
+
+// React
+function PokemonRowCreate({ pokemon, onSelect }) {
+  return React.createElement(
+    "tr",
+    { style: { cursor: "pointer" }, onClick: () => onSelect(pokemon) },
+    React.createElement("td", null, pokemon.id),
+    React.createElement("td", { className: "text-capitalize" }, pokemon.name),
+    React.createElement("td", null, React.createElement("img", { src: pokemon.sprite, alt: pokemon.name, style: { height: 50 } }))
+  );
+}
+
+// JSX
+function PokemonDetails({ pokemon, getStatColor }) {
+  if (!pokemon) {
+    return <div className="text-center text-muted mt-4"></div>;
+  }
+
+  return (
+    <div className="card p-3">
+      <div className="text-center mb-2">
+        <img src={pokemon.sprite} alt={pokemon.name} style={{ width: 150 }} className="d-block mx-auto" />
+        <h4 className="mt-2 text-capitalize">#{pokemon.id} {pokemon.name}</h4>
+      </div>
+
+      <div className="mb-2"><strong>Types:</strong> {pokemon.types.join(", ")}</div>
+      <div className="mb-2"><strong>Height:</strong> {pokemon.height} m</div>
+      <div className="mb-2"><strong>Weight:</strong> {pokemon.weight} kg</div>
+
+      <h5 className="mt-3">Stats</h5>
+      {pokemon.stats.map(s => (
+        <div key={s.name} className="mb-2">
+          <div className="d-flex justify-content-between">
+            <small>{s.name.toUpperCase()}</small>
+            <small>{s.base_stat}</small>
+          </div>
+          <div className="progress">
+            <div className={`progress-bar ${getStatColor(s.base_stat)}`} role="progressbar" style={{ width: `${Math.min(s.base_stat, 100)}%` }}></div>
+          </div>
+        </div>
+      ))}
+
+      <h6 className="mt-3">Abilities</h6>
+      <div>
+        {pokemon.abilities.map(a => (
+          <span key={a.name} className={a.hidden ? "badge bg-warning text-dark me-1" : "badge bg-primary me-1"}>
+            {a.name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// JSX
+function ErrorBox({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <div className="alert alert-danger alert-dismissible fade show" role="alert">
+      <strong>Error:</strong> {message}
+      <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
+    </div>
+  );
+}
+
 function GameDexApp(props) {
   const {
     pokemons,
@@ -9,124 +84,45 @@ function GameDexApp(props) {
     toggleJSX,
     errorMessage,
     clearError,
-    getStatColor,
+    getStatColor
   } = props;
 
-  const types = [
-    "", "normal", "fire", "water", "grass", "electric", "ice", "fighting", "poison",
-    "ground", "flying", "psychic", "bug", "rock", "ghost", "dark", "dragon", "steel", "fairy"
-  ];
+  const types = ["", "normal", "fire", "water", "grass", "electric", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dark", "dragon", "steel", "fairy"];
 
-  return React.createElement("div", { className: "container mt-3" },
-    errorMessage && React.createElement("div", { className: "alert alert-danger alert-dismissible fade show", role: "alert" },
-      errorMessage,
-      React.createElement("button", {
-        type: "button",
-        className: "btn-close",
-        onClick: clearError
-      })
-    ),
-    React.createElement("div", { className: "d-flex mb-3 gap-2" },
-      React.createElement("input", {
-        type: "text",
-        className: "form-control",
-        placeholder: "Search Pokémon by name or ID",
-        onInput: (e) => onSearch(e.target.value)
-      }),
-      React.createElement("select", {
-        className: "form-select",
-        onChange: (e) => onFilter(e.target.value)
-      },
-        types.map((t) => React.createElement("option", { key: t, value: t }, t ? t.charAt(0).toUpperCase() + t.slice(1) : "All Types"))
-      ),
-      React.createElement("button", {
-        className: "btn btn-secondary",
-        onClick: toggleJSX
-      }, useJSX ? "JSX Mode" : "createElement Mode")
-    ),
-    React.createElement("div", { className: "row" },
-      React.createElement("div", { className: "col-md-8" },
-        React.createElement("table", { className: "table table-bordered text-center align-middle" },
-          React.createElement("thead", null,
-            React.createElement("tr", null,
-              React.createElement("th", null, "#"),
-              React.createElement("th", null, "Name"),
-              React.createElement("th", null, "Sprite")
-            )
-          ),
-          React.createElement("tbody", null,
-            pokemons.map((p) =>
-              useJSX ? JSXPokemonRow(p, onSelect) : createElementPokemonRow(p, onSelect)
-            )
-          )
-        )
-      ),
-      React.createElement("div", { className: "col-md-4" },
-        selectedPokemon && PokemonDetails(selectedPokemon, getStatColor)
-      )
-    )
-  );
-}
+  const RowComp = useJSX ? PokemonRowJSX : PokemonRowCreate;
 
-function JSXPokemonRow(pokemon, onSelect) {
-  return React.createElement("tr", {
-    key: pokemon.id,
-    style: { cursor: "pointer" },
-    onClick: () => onSelect(pokemon)
-  },
-    React.createElement("td", null, pokemon.id),
-    React.createElement("td", null, pokemon.name),
-    React.createElement("td", null,
-      React.createElement("img", { src: pokemon.sprite, alt: pokemon.name, style: { height: "50px" } })
-    )
-  );
-}
+  return (
+    <div className="container mt-3">
+      <ErrorBox message={errorMessage} onClose={clearError} />
 
-function createElementPokemonRow(pokemon, onSelect) {
-  return React.createElement(
-    "tr",
-    {
-      key: pokemon.id,
-      style: { cursor: "pointer" },
-      onClick: () => onSelect(pokemon)
-    },
-    React.createElement("td", null, pokemon.id),
-    React.createElement("td", null, pokemon.name),
-    React.createElement("td", null,
-      React.createElement("img", { src: pokemon.sprite, alt: pokemon.name, style: { height: "50px" } })
-    )
-  );
-}
+      <div className="d-flex mb-3 gap-2">
+        <input type="text" className="form-control" placeholder="Search Pokémon by name or ID" onInput={(e) => onSearch(e.target.value)} />
+        <select className="form-select" onChange={(e) => onFilter(e.target.value)}>
+          {types.map(t => <option key={t} value={t}>{t ? t.charAt(0).toUpperCase() + t.slice(1) : "All Types"}</option>)}
+        </select>
+        <button className="btn btn-secondary" onClick={toggleJSX}>{useJSX ? "JSX Mode" : "createElement Mode"}</button>
+      </div>
 
-function PokemonDetails(pokemon, getStatColor) {
-  return React.createElement("ul", { className: "list-group" },
-    React.createElement("li", { className: "list-group-item text-center" },
-      React.createElement("img", { src: pokemon.sprite, alt: pokemon.name, style: { height: "150px" } })
-    ),
-    React.createElement("li", { className: "list-group-item" }, "#" + pokemon.id),
-    React.createElement("li", { className: "list-group-item" }, pokemon.name),
-    pokemon.stats.map((s) =>
-      React.createElement("li", { key: s.name, className: "list-group-item" },
-        s.name.toUpperCase() + ": ",
-        React.createElement("div", { className: "progress" },
-          React.createElement("div", {
-            className: "progress-bar " + getStatColor(s.base_stat),
-            role: "progressbar",
-            style: { width: s.base_stat + "%" }
-          }, s.base_stat)
-        )
-      )
-    ),
-    React.createElement("li", { className: "list-group-item" }, "Height: " + pokemon.height + "m"),
-    React.createElement("li", { className: "list-group-item" }, "Weight: " + pokemon.weight + "kg"),
-    React.createElement("li", { className: "list-group-item" }, "Types: " + pokemon.types.join(", ")),
-    React.createElement("li", { className: "list-group-item" }, "Abilities: ",
-      pokemon.abilities.map((a) =>
-        React.createElement("span", {
-          key: a.name,
-          className: a.hidden ? "badge bg-warning text-dark mx-1" : "badge bg-primary mx-1"
-        }, a.name)
-      )
-    )
+      <div id="pokemon-container" className="row">
+        <div id="pokemon-list" className="col-md-8">
+          <table className="table table-bordered text-center align-middle">
+            <thead>
+              <tr><th>#</th><th>Name</th><th>Sprite</th></tr>
+            </thead>
+            <tbody>
+              {pokemons && pokemons.length
+                ? pokemons.map(p => useJSX ? <RowComp key={p.id} pokemon={p} onSelect={onSelect} /> : React.createElement(RowComp, { key: p.id, pokemon: p, onSelect }))
+                : <tr><td colSpan="3">No Pokémon to display</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        <div id="pokemon-details" className="col-md-4">
+          <div className="mt-3">
+            {useJSX ? <PokemonDetails pokemon={selectedPokemon} getStatColor={getStatColor} /> : React.createElement(PokemonDetails, { pokemon: selectedPokemon, getStatColor })}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
